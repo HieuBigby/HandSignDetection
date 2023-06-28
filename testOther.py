@@ -27,14 +27,14 @@ def get_image_files(folder_path):
 def augment_image(image):
     # Define augmentation techniques
     seq = iaa.Sequential([
-        iaa.Fliplr(0.5),  # horizontally flip 50% of the images
-        iaa.Flipud(0.5),  # vertically flip 50% of the images
+        iaa.Fliplr(0.3),  # horizontally flip 30% of the images
+        iaa.Flipud(0.1),  # vertically flip 10% of the images
         iaa.Rotate((-45, 45)),  # rotate the image between -45 and 45 degrees
-        iaa.GaussianBlur(sigma=(0, 3.0)),  # apply Gaussian blur with random sigma
-        iaa.ContrastNormalization((0.8, 1.2)),  # adjust contrast by a random factor
-        iaa.Multiply((0.8, 1.2)),  # multiply the image with random values
-        iaa.MultiplyHueAndSaturation((0.8, 1.2)),  # multiply hue and saturation with random values
-        iaa.Affine(scale=(0.8, 1.2), translate_percent=(-0.2, 0.2), rotate=(-45, 45), shear=(-16, 16))
+        iaa.GaussianBlur(sigma=(0, 0.5)),  # apply Gaussian blur with random sigma
+        iaa.ContrastNormalization((0.95, 1.05)),  # adjust contrast by a random factor
+        # iaa.Multiply((0.8, 1.2)),  # multiply the image with random values
+        iaa.MultiplyHueAndSaturation((0.9, 1.1)),  # multiply hue and saturation with random values
+        iaa.Affine(scale=(0.8, 1.2), translate_percent=(-0.1, 0.1), rotate=(-20, 20), shear=(-1, 1))
     ])
 
     # Convert image to imgaug format
@@ -52,6 +52,7 @@ def augment_image(image):
 
     return augmented_image
 
+
 def clear_folder(folder_path):
     if os.path.exists(folder_path):
         for file_name in os.listdir(folder_path):
@@ -65,6 +66,11 @@ def clear_folder(folder_path):
         print(f"Folder does not exist: {folder_path}")
 
 
+offset = 20
+imgSize = 300
+detector = HandDetector(maxHands=1)
+
+
 def augment_and_save_images(image, output_dir, num_variations):
     # Create the output directory if it doesn't exist
     if not os.path.exists(output_dir):
@@ -72,21 +78,46 @@ def augment_and_save_images(image, output_dir, num_variations):
     else:
         clear_folder(output_dir)
 
+    successCount = 0
+
     # Generate augmented images and save them to the output directory
-    for i in range(num_variations):
+    while successCount < num_variations:
         # Augment the image
         augmented_image = augment_image(image)
 
-        # Resize the augmented image to a fixed size of 300x300 pixels
-        augmented_image = cv2.resize(augmented_image, (300, 300))
+        # Find Hands
+        hands, foundImg = detector.findHands(augmented_image)
+        if hands:
+            hand = hands[0]
+            x, y, w, h = hand['bbox']
 
-        # Generate output file path
-        output_path = os.path.join(output_dir, f"augmented_image_{i + 1}.png")
+            imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) * 255
+            imgCrop = foundImg[y - offset:y + h + offset, x - offset:x + w + offset]
+            if imgCrop.size <= 0:
+                continue
 
-        # Save the augmented image in PNG format
-        cv2.imwrite(output_path, augmented_image, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+            aspectRatio = h / w
+            if aspectRatio > 1:
+                k = imgSize / h
+                wCal = math.ceil(k * w)
+                imgResize = cv2.resize(imgCrop, (wCal, imgSize))
+                wGap = math.ceil((imgSize - wCal) / 2)
+                imgWhite[:, wGap:wCal + wGap] = imgResize
+            else:
+                k = imgSize / w
+                hCal = math.ceil(k * h)
+                imgResize = cv2.resize(imgCrop, (imgSize, hCal))
+                hGap = math.ceil((imgSize - hCal) / 2)
+                imgWhite[hGap:hCal + hGap, :] = imgResize
 
-        print(f"Saved augmented image {i + 1}/{num_variations} at: {output_path}")
+            # Generate output file path
+            output_path = os.path.join(output_dir, f"augmented_image_{successCount + 1}.png")
+
+            # Save the augmented image in PNG format
+            cv2.imwrite(output_path, imgWhite, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+
+            print(f"Saved augmented image {successCount + 1}/{num_variations} at: {output_path}")
+            successCount += 1
 
 
 workingFolder = "/home/hieubigby/IdeaProjects/HandSignDetection/"
@@ -94,7 +125,7 @@ other_path = f'{workingFolder}Data/Other'
 img = cv2.imread(get_image_files(other_path)[0])
 
 # Specify the output directory for saving the augmented images
-output_dir = f'{workingFolder}Data/D' # Replace with the desired output folder path
+output_dir = f'{workingFolder}Data/D'  # Replace with the desired output folder path
 
 # Specify the number of variations
 num_variations = 300  # Replace with the desired number of augmented images
