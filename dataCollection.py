@@ -11,7 +11,7 @@ detector = HandDetector(maxHands=1)
 offset = 20
 imgSize = 300
 
-imgFolder = "Data/C"
+imgFolder = "Data/Other"
 workingFolder = "/home/hieubigby/IdeaProjects/HandSignDetection/"
 counter = 0
 
