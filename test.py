@@ -6,6 +6,9 @@ import numpy as np
 from cvzone.HandTrackingModule import HandDetector
 from cvzone.ClassificationModule import Classifier
 
+import dataAugmentation
+from dataCollection import draw_landmark_lines
+
 workingFolder = "/home/hieubigby/IdeaProjects/HandSignDetection/"
 
 cap = cv2.VideoCapture(0)
@@ -19,13 +22,15 @@ counter = 0
 labels = ['A', 'B', 'C', 'D']
 
 while True:
-    success, img = cap.read()
+    # success, img = cap.read()
+    img = cv2.imread(dataAugmentation.get_image_files(f'{workingFolder}Data/Other')[1])
     imgOutput = img.copy()
     hands, img = detector.findHands(img)
     if hands:
         hand = hands[0]
         x, y, w, h = hand['bbox']
 
+        img = draw_landmark_lines(img, hand['lmList'])
         imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) * 255
         imgCrop = img[y - offset:y + h + offset, x - offset:x + w + offset]
 
