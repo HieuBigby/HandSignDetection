@@ -8,6 +8,8 @@ from imgaug import augmenters as iaa
 from cvzone.HandTrackingModule import HandDetector
 from cvzone.ClassificationModule import Classifier
 
+import dataCollection
+
 
 def get_image_files(folder_path):
     image_files = []
@@ -28,13 +30,13 @@ def augment_image(image):
     # Define augmentation techniques
     seq = iaa.Sequential([
         iaa.Fliplr(0.3),  # horizontally flip 30% of the images
-        iaa.Flipud(0.1),  # vertically flip 10% of the images
-        iaa.Rotate((-45, 45)),  # rotate the image between -45 and 45 degrees
-        iaa.GaussianBlur(sigma=(0, 0.5)),  # apply Gaussian blur with random sigma
-        iaa.LinearContrast((0.95, 1.05)),  # adjust contrast by a random factor
+        # iaa.Flipud(0.1),  # vertically flip 10% of the images
+        iaa.Rotate((-30, 30)),  # rotate the image between -45 and 45 degrees
+        # iaa.GaussianBlur(sigma=(0, 0.5)),  # apply Gaussian blur with random sigma
+        # iaa.LinearContrast((0.95, 1.05)),  # adjust contrast by a random factor
         # iaa.Multiply((0.8, 1.2)),  # multiply the image with random values
-        iaa.MultiplyHueAndSaturation((0.9, 1.1)),  # multiply hue and saturation with random values
-        iaa.Affine(scale=(0.8, 1.2), translate_percent=(-0.1, 0.1), rotate=(-20, 20), shear=(-1, 1))
+        # iaa.MultiplyHueAndSaturation((0.9, 1.1)),  # multiply hue and saturation with random values
+        # iaa.Affine(scale=(0.8, 1.2), translate_percent=(-0.1, 0.1), rotate=(-20, 20), shear=(-1, 1))
     ])
 
     # Convert image to imgaug format
@@ -85,13 +87,16 @@ def augment_and_save_images(image, output_dir, num_variations):
         # Augment the image
         augmented_image = augment_image(image)
 
+        # cv2.imshow('Image', image)
+
         # Find Hands
         hands, foundImg = detector.findHands(augmented_image)
         if hands:
             hand = hands[0]
             x, y, w, h = hand['bbox']
 
-            imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) * 255
+            foundImg = dataCollection.draw_landmark_lines(foundImg, hand['lmList'])
+            imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) # * 255
             imgCrop = foundImg[y - offset:y + h + offset, x - offset:x + w + offset]
             if imgCrop.size <= 0:
                 continue
@@ -109,6 +114,8 @@ def augment_and_save_images(image, output_dir, num_variations):
                 imgResize = cv2.resize(imgCrop, (imgSize, hCal))
                 hGap = math.ceil((imgSize - hCal) / 2)
                 imgWhite[hGap:hCal + hGap, :] = imgResize
+
+            # augmented_image = augment_image(imgWhite)
 
             # Generate output file path
             output_path = os.path.join(output_dir, f"augmented_image_{successCount + 1}.png")
@@ -134,6 +141,9 @@ if __name__ == "__main__":
         # Get the file name with extension
         file_name = os.path.basename(imgPath)
         file_name = os.path.splitext(file_name)[0]
+
+        # if file_name == 'A' or file_name == 'B':
+        #     continue
 
         img = cv2.imread(imgPath)
 

@@ -77,7 +77,7 @@ if __name__ == "__main__":
             x, y, w, h = hand['bbox']
             img = draw_landmark_lines(img, hand['lmList'])
 
-            imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) * 255
+            imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) # * 255
             imgCrop = img[y - offset:y + h + offset, x - offset:x + w + offset]
 
             imgCropShape = imgCrop.shape
