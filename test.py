@@ -13,31 +13,35 @@ workingFolder = "/home/hieubigby/IdeaProjects/HandSignDetection/"
 
 cap = cv2.VideoCapture(0)
 detector = HandDetector(maxHands=1)
+
+# Load model và label
 classifier = Classifier(f'{workingFolder}Model/keras_model.h5', f'{workingFolder}Model/labels.txt')
 offset = 20
 imgSize = 300
 
 imgFolder = "Data/C"
 counter = 0
-labels = ['A', 'B', 'C', 'D']
+labels = ['A', 'B', 'C', 'D', 'Đ', 'E']
 
 while True:
     success, img = cap.read()
     # img = cv2.imread(dataAugmentation.get_image_files(f'{workingFolder}Data/Other')[1])
+    # img = cv2.imread(f'{workingFolder}Data/Other/A.png')
     imgOutput = img.copy()
     hands, img = detector.findHands(img)
+
+    # Nếu phát hiện được tay thì cắt phần phát hiện đó
     if hands:
         hand = hands[0]
         x, y, w, h = hand['bbox']
 
         img = draw_landmark_lines(img, hand['lmList'])
-        imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) # * 255
+        imgWhite = np.zeros((imgSize, imgSize, 3), np.uint8) # * 255
         imgCrop = img[y - offset:y + h + offset, x - offset:x + w + offset]
-
-        imgCropShape = imgCrop.shape
 
         aspectRatio = h / w
 
+        # Xử lý phần ảnh sau khi đã cắt
         if aspectRatio > 1:
             k = imgSize / h
             wCal = math.ceil(k * w)
@@ -53,6 +57,7 @@ while True:
             hGap = math.ceil((imgSize - hCal) / 2)
             imgWhite[hGap:hCal + hGap, :] = imgResize
 
+        # Đưa ảnh vào model để đoán
         prediction, index = classifier.getPrediction(imgWhite, draw = False)
         print(prediction, index)
         cv2.putText(imgOutput, labels[index], (x, y - 20), cv2.FONT_HERSHEY_COMPLEX, 2, (255, 0, 255), 2)

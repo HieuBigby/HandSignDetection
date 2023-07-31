@@ -31,7 +31,7 @@ def augment_image(image):
     seq = iaa.Sequential([
         iaa.Fliplr(0.3),  # horizontally flip 30% of the images
         # iaa.Flipud(0.1),  # vertically flip 10% of the images
-        iaa.Rotate((-30, 30)),  # rotate the image between -45 and 45 degrees
+        iaa.Rotate((-20, 20)),  # rotate the image between -45 and 45 degrees
         # iaa.GaussianBlur(sigma=(0, 0.5)),  # apply Gaussian blur with random sigma
         # iaa.LinearContrast((0.95, 1.05)),  # adjust contrast by a random factor
         # iaa.Multiply((0.8, 1.2)),  # multiply the image with random values
@@ -72,7 +72,7 @@ offset = 20
 imgSize = 300
 detector = HandDetector(maxHands=1)
 
-
+# Tạo các variant của ảnh
 def augment_and_save_images(image, output_dir, num_variations):
     # Create the output directory if it doesn't exist
     if not os.path.exists(output_dir):
@@ -86,8 +86,6 @@ def augment_and_save_images(image, output_dir, num_variations):
     while successCount < num_variations:
         # Augment the image
         augmented_image = augment_image(image)
-
-        # cv2.imshow('Image', image)
 
         # Find Hands
         hands, foundImg = detector.findHands(augmented_image)
@@ -133,7 +131,6 @@ other_path = f'{workingFolder}Data/Other'
 if __name__ == "__main__":
     # Specify the number of variations
     num_variations = 300  # Replace with the desired number of augmented images
-    labels = ['A', 'B', 'C', 'D']
 
     img_paths = get_image_files(other_path)
     for imgPath in img_paths:

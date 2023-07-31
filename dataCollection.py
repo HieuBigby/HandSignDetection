@@ -72,12 +72,11 @@ if __name__ == "__main__":
         hands, img = detector.findHands(img)
         imgOutput = img.copy()
         if hands:
-            # print(hands)
             hand = hands[0]
             x, y, w, h = hand['bbox']
             img = draw_landmark_lines(img, hand['lmList'])
 
-            imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) # * 255
+            imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) * 255
             imgCrop = img[y - offset:y + h + offset, x - offset:x + w + offset]
 
             imgCropShape = imgCrop.shape
@@ -99,23 +98,15 @@ if __name__ == "__main__":
                 hGap = math.ceil((imgSize - hCal) / 2)
                 imgWhite[hGap:hCal + hGap, :] = imgResize
 
-            # cropHands, cropImg = detector.findHands(img, True)
-            # cv2.imshow("Crop Img", cropImg)
-            # procImage = extract_landmarks(imgWhite, cropHands)
-            # contourImg = process_image(imgWhite)
-            # procImage = extract_landmarks_image(img, hand['lmList'])
-            # cv2.imshow("ImageProcessed", procImage)
-
             cv2.imshow("ImageCrop", imgCrop)
             cv2.imshow("ImageWhite", imgWhite)
 
         cv2.imshow("Image", imgOutput)
 
+        # Save lại ảnh data khi nhấn s
         key = cv2.waitKey(1)
         if key == ord("s"):
             counter += 1
-            # os.chdir('..')
-            # print("Current working directory:", os.getcwd())
             file_path = f'{workingFolder}{imgFolder}/Image_{time.time()}.jpg'
             print("Saving image:", file_path)
             success = cv2.imwrite(file_path, imgWhite)
