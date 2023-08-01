@@ -64,7 +64,8 @@ actions = np.array(['Xin chao', 'Cam on', 'Hen gap lai'])
 
 # Videos are going to be 30 frames in length
 sequence_length = 10
-
+video_index = 0
+action_index = 2
 # # Tạo folder Data
 # for action in actions:
 #     os.makedirs(os.path.join(DATA_PATH, action))
@@ -75,35 +76,52 @@ if __name__ == '__main__':
     with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
         collecting = False
         frame_counter = 0
+        countdown_duration = 1  # 3 seconds countdown
+        last_time = time.time()
 
         while cap.isOpened():
             # Read feed
             ret, image = cap.read()
-            cv2.imshow('OpenCV Feed', image)
 
+            # Make detections
+            image, results = mediapipe_detection(image, holistic)
+
+            # Draw landmarks
+            draw_styled_landmarks(image, results)
+
+            # Lưu ảnh khi nhấn 's'
             key = cv2.waitKey(1)
             if key == ord('s'):
                 collecting = True
                 frame_counter = 0
+                video_index += 1
+                last_time = time.time()
 
             if collecting and frame_counter < sequence_length:
-                # Make detections
-                image, results = mediapipe_detection(image, holistic)
+                # Check for countdown
+                current_time = time.time()
+                countdown_remaining = countdown_duration - int(current_time - last_time)
+                if countdown_remaining > 0:
+                    # Display countdown text
+                    cv2.putText(image, 'Recording starts in {}s'.format(countdown_remaining),
+                                (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+                else:
+                    cv2.putText(image, 'Collecting frame {} for video {} of action {}'
+                        .format(frame_counter, video_index, actions[action_index]), (15, 15),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
 
-                # Draw landmarks
-                draw_styled_landmarks(image, results)
+                    folder_path = os.path.join(DATA_PATH, actions[action_index], str(video_index))
+                    if not os.path.exists(folder_path):
+                        os.makedirs(folder_path)
+                    file_path = folder_path + f'/Image_{frame_counter}.jpg'
+                    keypoints = extract_keypoints(results)
+                    np.save(folder_path + f'/{frame_counter}', keypoints)
+                    print("Saving image:", file_path)
+                    success = cv2.imwrite(file_path, image)
+                    frame_counter += 1
 
-                cv2.putText(image, 'Collecting frame {} for {}'.format(frame_counter, actions[0]),
-                            (15, 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-
-                # Show to screen
-                cv2.imshow('OpenCV Feed', image)
-
-                file_path = f'Other/Image_{frame_counter}.jpg'
-                print("Saving image:", file_path)
-                success = cv2.imwrite(file_path, image)
-
-                frame_counter += 1
+            # Show to screen
+            cv2.imshow('OpenCV Feed', image)
 
             # Break gracefully
             if cv2.waitKey(10) & 0xFF == ord('q'):
