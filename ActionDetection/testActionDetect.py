@@ -3,6 +3,7 @@ import os
 from keras.models import Sequential
 from keras.layers import LSTM, Dense
 from keras.callbacks import TensorBoard
+from scipy import stats
 import mediapipe as mp
 import cv2
 import numpy as np
@@ -56,35 +57,31 @@ def extract_keypoints(results):
 
 
 # Path for exported data, numpy arrays
-DATA_PATH = os.path.join('MP_Data')
+DATA_PATH = os.path.join('AcData')
 
 # Actions that we try to detect
-actions = np.array(['hello', 'thanks', 'iloveyou'])
-
-# Thirty videos worth of data
-no_sequences = 30
+actions = np.array(['Xin chao', 'Cam on', 'Hen gap lai'])
 
 # Videos are going to be 30 frames in length
-sequence_length = 30
-
-# Folder start
-start_folder = 30
+sequence_length = 10
 
 # Load Model
 mp_holistic = mp.solutions.holistic # Holistic model
 mp_drawing = mp.solutions.drawing_utils # Drawing utilities
 model = Sequential()
-model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(30,1662)))
+model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(sequence_length, 1662)))
 model.add(LSTM(128, return_sequences=True, activation='relu'))
 model.add(LSTM(64, return_sequences=False, activation='relu'))
 model.add(Dense(64, activation='relu'))
 model.add(Dense(32, activation='relu'))
 model.add(Dense(actions.shape[0], activation='softmax'))
-model.load_weights('action.h5')
+model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
+
+model.load_weights('action_1.h5')
 
 # 1. New detection variables
-sequence = []
-sentence = []
+sequences = []
+sentences = []
 predictions = []
 threshold = 0.5
 
@@ -92,7 +89,6 @@ cap = cv2.VideoCapture(0)
 # Set mediapipe model
 with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
     while cap.isOpened():
-
         # Read feed
         ret, frame = cap.read()
 
@@ -105,33 +101,33 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
 
         # 2. Prediction logic
         keypoints = extract_keypoints(results)
-        sequence.append(keypoints)
-        sequence = sequence[-30:]
+        sequences.append(keypoints)
+        sequences = sequences[-10:]
 
-        if len(sequence) == 30:
-            res = model.predict(np.expand_dims(sequence, axis=0))[0]
+        if len(sequences) == sequence_length:
+            res = model.predict(np.expand_dims(sequences, axis=0))[0]
             print(res)
             print(actions[np.argmax(res)])
             predictions.append(np.argmax(res))
 
             # 3. Viz logic
-            if np.unique(predictions[-10:])[0] == np.argmax(res):
-                if res[np.argmax(res)] > threshold:
+            # Nếu trong 10 frame
+            # if np.bincount(predictions[-10:]).argmax() == np.argmax(res):
+            if res[np.argmax(res)] > threshold:
+                if len(sentences) > 0:
+                    if actions[np.bincount(predictions[-10:]).argmax()] != sentences[-1]:
+                        sentences.append(actions[np.argmax(res)])
+                else:
+                    sentences.append(actions[np.argmax(res)])
 
-                    if len(sentence) > 0:
-                        if actions[np.argmax(res)] != sentence[-1]:
-                            sentence.append(actions[np.argmax(res)])
-                    else:
-                        sentence.append(actions[np.argmax(res)])
-
-            if len(sentence) > 5:
-                sentence = sentence[-5:]
+            if len(sentences) > 4:
+                sentences = sentences[-4:]
 
             # Viz probabilities
             image = prob_viz(res, actions, image, colors)
 
         cv2.rectangle(image, (0, 0), (640, 40), (245, 117, 16), -1)
-        cv2.putText(image, ' '.join(sentence), (3, 30),
+        cv2.putText(image, ' '.join(sentences), (3, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         # Show to screen
