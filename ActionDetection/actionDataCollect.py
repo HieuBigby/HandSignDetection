@@ -60,15 +60,18 @@ def extract_keypoints(results):
 DATA_PATH = os.path.join('AcData')
 
 # Actions that we try to detect
-actions = np.array(['Xin chao', 'Cam on', 'Hen gap lai'])
+actions = np.array(['None', 'Xin chao', 'Cam on', 'Hen gap lai'])
 
 # Videos are going to be 30 frames in length
 sequence_length = 10
-video_index = 0
-action_index = 2
-# # Tạo folder Data
-# for action in actions:
-#     os.makedirs(os.path.join(DATA_PATH, action))
+video_index = -1
+action_index = 0
+
+# Tạo folder Data nếu chưa có
+for action in actions:
+    action_path = os.path.join(DATA_PATH, action)
+    if not os.path.exists(action_path):
+        os.makedirs(action_path)
 
 if __name__ == '__main__':
     cap = cv2.VideoCapture(0)

@@ -7,8 +7,19 @@ from scipy import stats
 import mediapipe as mp
 import cv2
 import numpy as np
+import random
 
-colors = [(245, 117, 16), (117, 245, 16), (16, 117, 245)]
+
+def generate_distinct_colors(num_colors):
+    distinct_colors = []
+    for _ in range(num_colors):
+        color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
+        distinct_colors.append(color)
+    return distinct_colors
+
+
+# colors = [(245, 117, 16), (117, 245, 16), (16, 117, 245)]
+
 def prob_viz(res, actions, input_frame, colors):
     output_frame = input_frame.copy()
     for num, prob in enumerate(res):
@@ -59,11 +70,14 @@ def extract_keypoints(results):
 # Path for exported data, numpy arrays
 DATA_PATH = os.path.join('AcData')
 
-# Actions that we try to detect
-actions = np.array(['Xin chao', 'Cam on', 'Hen gap lai'])
+# Danh sách các action đã tạo
+folder_names = [name for name in os.listdir(DATA_PATH) if os.path.isdir(os.path.join(DATA_PATH, name))]
+# Convert the list of folder names to a NumPy array
+actions = np.array(folder_names)
 
 # Videos are going to be 30 frames in length
 sequence_length = 10
+colors = generate_distinct_colors(actions.shape[0])
 
 # Load Model
 mp_holistic = mp.solutions.holistic # Holistic model
@@ -77,7 +91,7 @@ model.add(Dense(32, activation='relu'))
 model.add(Dense(actions.shape[0], activation='softmax'))
 model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
-model.load_weights('action_1.h5')
+model.load_weights('action_2.h5')
 
 # 1. New detection variables
 sequences = []
@@ -114,17 +128,18 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
             # Nếu trong 10 frame
             # if np.bincount(predictions[-10:]).argmax() == np.argmax(res):
             if res[np.argmax(res)] > threshold:
-                if len(sentences) > 0:
-                    if actions[np.bincount(predictions[-10:]).argmax()] != sentences[-1]:
+                if actions[np.argmax(res)] != 'None':
+                    if len(sentences) > 0:
+                        if actions[np.bincount(predictions[-10:]).argmax()] != sentences[-1]:
+                            sentences.append(actions[np.argmax(res)])
+                    else:
                         sentences.append(actions[np.argmax(res)])
-                else:
-                    sentences.append(actions[np.argmax(res)])
 
             if len(sentences) > 4:
                 sentences = sentences[-4:]
 
-            # Viz probabilities
-            image = prob_viz(res, actions, image, colors)
+            # # Viz probabilities
+            # image = prob_viz(res, actions, image, colors)
 
         cv2.rectangle(image, (0, 0), (640, 40), (245, 117, 16), -1)
         cv2.putText(image, ' '.join(sentences), (3, 30),
