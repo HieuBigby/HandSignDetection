@@ -125,24 +125,29 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
             predictions.append(np.argmax(res))
 
             # 3. Viz logic
-            # Nếu trong 10 frame
-            # if np.bincount(predictions[-10:]).argmax() == np.argmax(res):
+            # Tìm ra hành động được dự đoán nhiều nhất trong 10 video đưa vào
             if res[np.argmax(res)] > threshold:
-                if actions[np.argmax(res)] != 'None':
-                    if len(sentences) > 0:
-                        if actions[np.bincount(predictions[-10:]).argmax()] != sentences[-1]:
-                            sentences.append(actions[np.argmax(res)])
-                    else:
-                        sentences.append(actions[np.argmax(res)])
+                # if actions[np.argmax(res)] != 'None':
+                if len(sentences) > 0:
+                    most_res = np.bincount(predictions[-10:]).argmax()
+                    if actions[most_res] != sentences[-1]:
+                        # if(actions[most_res]) != 'None':
+                        sentences.append(actions[most_res])
+                else:
+                    sentences.append(actions[np.argmax(res)])
 
-            if len(sentences) > 4:
-                sentences = sentences[-4:]
+            # Reset lại sentences
+            sentences = sentences[-10:]
 
             # # Viz probabilities
             # image = prob_viz(res, actions, image, colors)
 
+        # Loại bỏ hành động 'Break' ra khỏi phần hiển thị
+        filtered_sentences = [s for s in sentences if s != 'None']
+        if len(filtered_sentences) > 4:
+            filtered_sentences = filtered_sentences[-4:]
         cv2.rectangle(image, (0, 0), (640, 40), (245, 117, 16), -1)
-        cv2.putText(image, ' '.join(sentences), (3, 30),
+        cv2.putText(image, ' '.join(filtered_sentences), (3, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         # Show to screen
