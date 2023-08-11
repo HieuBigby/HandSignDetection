@@ -1,9 +1,10 @@
 import os
 
 from keras.models import Sequential
-from keras.layers import LSTM, Dense
+from keras.layers import LSTM, Dense, Dropout
 from keras.callbacks import TensorBoard
 from scipy import stats
+from keras.regularizers import l2
 import mediapipe as mp
 import cv2
 import numpy as np
@@ -83,21 +84,25 @@ colors = generate_distinct_colors(actions.shape[0])
 mp_holistic = mp.solutions.holistic # Holistic model
 mp_drawing = mp.solutions.drawing_utils # Drawing utilities
 model = Sequential()
-model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(sequence_length, 258)))
+
+model = Sequential()
+model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(sequence_length, 258))) # input_shape=(sequence_length, 1662)
+model.add(Dropout(0.2))
 model.add(LSTM(128, return_sequences=True, activation='relu'))
+model.add(Dropout(0.2))
 model.add(LSTM(64, return_sequences=False, activation='relu'))
-model.add(Dense(64, activation='relu'))
-model.add(Dense(32, activation='relu'))
+model.add(Dense(64, activation='relu')) # , kernel_regularizer=l2(0.01)  # Add L2 regularization
+model.add(Dense(32, activation='relu')) # , kernel_regularizer=l2(0.01)  # Add L2 regularization
 model.add(Dense(actions.shape[0], activation='softmax'))
 model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
-model.load_weights('action_3.h5')
+model.load_weights('action_6.h5')
 
 # 1. New detection variables
 sequences = []
 sentences = []
 predictions = []
-threshold = 0.5
+threshold = 0.9
 
 cap = cv2.VideoCapture(0)
 # Set mediapipe model
@@ -108,7 +113,7 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
 
         # Make detections
         image, results = mediapipe_detection(frame, holistic)
-        print(results)
+        # print(results)
 
         # Draw landmarks
         draw_styled_landmarks(image, results)
@@ -120,16 +125,18 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
 
         if len(sequences) == sequence_length:
             res = model.predict(np.expand_dims(sequences, axis=0))[0]
-            print(res)
+            # print(res)
             print(actions[np.argmax(res)])
             predictions.append(np.argmax(res))
+            predictions = predictions[-10:]
+            # print('prediction length: ' + str(len(predictions)))
 
             # 3. Viz logic
             # Tìm ra hành động được dự đoán nhiều nhất trong 10 video đưa vào
             if res[np.argmax(res)] > threshold:
                 # if actions[np.argmax(res)] != 'None':
                 if len(sentences) > 0:
-                    most_res = np.bincount(predictions[-10:]).argmax()
+                    most_res = np.bincount(predictions).argmax()
                     if actions[most_res] != sentences[-1]:
                         # if(actions[most_res]) != 'None':
                         sentences.append(actions[most_res])

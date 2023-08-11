@@ -1,2 +1,9 @@
 - Viết báo cáo những việc đã làm
 - Xây dựng bộ từ điển nhỏ gồm 50 từ
+
+- action_2: Mô hình chứa mặt, thân, tay, actions: "Xin chào", "Cảm ơn", "Hẹn gặp lại"
+- action_3: Mô hình chứa thân, tay - actions: "Xin chào", "Cảm ơn"
+- action_4: Mô hình chứa thân, tay - actions: "Xin chào", "Cảm ơn", "Hẹn", "Gặp", "Lại" (Chưa phát hiện tốt lắm,
+còn bị nhầm giữa các hành động)
+- action_6: Đã thêm nhiều data hơn (100 video cho mỗi hành động) và train với 500 epochs, kết quả tương đối
+đã tốt hơn so với model action_4 và action_5 (train tầm 200 có thể là đủ rồi)

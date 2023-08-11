@@ -2,10 +2,11 @@ import os
 
 from keras.models import Sequential
 from keras.models import load_model
-from keras.layers import LSTM, Dense
+from keras.layers import LSTM, Dense, Dropout
 from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
 from keras.callbacks import TensorBoard
+from keras.regularizers import l2
 import mediapipe as mp
 import cv2
 import numpy as np
@@ -54,14 +55,16 @@ tb_callback = TensorBoard(log_dir=log_dir)
 
 model = Sequential()
 model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(sequence_length, 258))) # input_shape=(sequence_length, 1662)
+model.add(Dropout(0.2))
 model.add(LSTM(128, return_sequences=True, activation='relu'))
+model.add(Dropout(0.2))
 model.add(LSTM(64, return_sequences=False, activation='relu'))
-model.add(Dense(64, activation='relu'))
-model.add(Dense(32, activation='relu'))
+model.add(Dense(64, activation='relu')) # , kernel_regularizer=l2(0.01)  # Add L2 regularization
+model.add(Dense(32, activation='relu')) # , kernel_regularizer=l2(0.01)  # Add L2 regularization
 model.add(Dense(actions.shape[0], activation='softmax'))
 model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
-model.fit(X_train, y_train, epochs=1000, callbacks=[tb_callback])
-model.save('action_3.h5')
+model.fit(X_train, y_train, epochs=500, callbacks=[tb_callback], validation_data=(X_test, y_test))
+model.save('action_6.h5')
 
 # model_path = 'action_1.h5'
 
