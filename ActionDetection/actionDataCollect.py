@@ -63,12 +63,13 @@ def check_subfolder_file_count(folder_path):
 DATA_PATH = os.path.join('AcData')
 
 # Actions that we try to detect
-actions = np.array(['None', 'Xin chao', 'Cam on', 'Hen', 'Gap', 'Lai'])
+actions = np.array(['None', 'Xin chao', 'Cam on', 'Hen', 'Gap', 'Lai', 'Toi', 'Ten',
+                    'H', 'I', 'E', 'U'])
 
 # Videos are going to be 30 frames in length
 sequence_length = 10
-video_index = 51
-action_index = 5
+video_index = -1
+action_index = 11
 
 # Tạo folder Data nếu chưa có
 for action in actions:

@@ -67,6 +67,15 @@ def extract_keypoints(results):
     rh = np.array([[res.x, res.y, res.z] for res in results.right_hand_landmarks.landmark]).flatten() if results.right_hand_landmarks else np.zeros(21*3)
     return np.concatenate([pose, lh, rh]) # [pose, face, lh, rh]
 
+def contains_hands(keypoints):
+    # kiểm tra xem từ 132 đến 258 có thằng nào bằng 0 không (để biết là lúc nào có tay mới thêm vào sequence)
+    array_subset = keypoints[132:259]  # Extract elements from index 132 to 258
+
+    # Check if any element in the subset is different from 0
+    contains_non_zero = np.any(array_subset != 0)
+
+    return contains_non_zero
+
 
 # Path for exported data, numpy arrays
 DATA_PATH = os.path.join('AcData')
@@ -96,7 +105,7 @@ model.add(Dense(32, activation='relu')) # , kernel_regularizer=l2(0.01)  # Add L
 model.add(Dense(actions.shape[0], activation='softmax'))
 model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
-model.load_weights('action_6.h5')
+model.load_weights('action_7.h5')
 
 # 1. New detection variables
 sequences = []
@@ -120,6 +129,15 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
 
         # 2. Prediction logic
         keypoints = extract_keypoints(results)
+
+        # if results.left_hand_landmarks or results.right_hand_landmarks:
+        #     sequences.append(keypoints)
+        # else:
+        #     sequences.append(np.zeros(258))
+
+        # if contains_hands(keypoints):
+        #     # print('Have hands')
+        #     sequences.append(keypoints)
         sequences.append(keypoints)
         sequences = sequences[-10:]
 
@@ -128,7 +146,7 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
             # print(res)
             print(actions[np.argmax(res)])
             predictions.append(np.argmax(res))
-            predictions = predictions[-10:]
+            predictions = predictions[-15:]
             # print('prediction length: ' + str(len(predictions)))
 
             # 3. Viz logic
@@ -151,8 +169,12 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
 
         # Loại bỏ hành động 'Break' ra khỏi phần hiển thị
         filtered_sentences = [s for s in sentences if s != 'None']
-        if len(filtered_sentences) > 4:
-            filtered_sentences = filtered_sentences[-4:]
+        sum_lengths = sum(len(s) for s in filtered_sentences)
+        print(sum_lengths)
+        if sum_lengths > 25:
+            filtered_sentences = filtered_sentences[-5:]
+        # if len(filtered_sentences) > 4:
+        #     filtered_sentences = filtered_sentences[-4:]
         cv2.rectangle(image, (0, 0), (640, 40), (245, 117, 16), -1)
         cv2.putText(image, ' '.join(filtered_sentences), (3, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)

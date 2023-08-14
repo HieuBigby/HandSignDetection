@@ -63,8 +63,8 @@ model.add(Dense(64, activation='relu')) # , kernel_regularizer=l2(0.01)  # Add L
 model.add(Dense(32, activation='relu')) # , kernel_regularizer=l2(0.01)  # Add L2 regularization
 model.add(Dense(actions.shape[0], activation='softmax'))
 model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
-model.fit(X_train, y_train, epochs=500, callbacks=[tb_callback], validation_data=(X_test, y_test))
-model.save('action_6.h5')
+model.fit(X_train, y_train, epochs=300, callbacks=[tb_callback], validation_data=(X_test, y_test))
+model.save('action_7.h5')
 
 # model_path = 'action_1.h5'
 
