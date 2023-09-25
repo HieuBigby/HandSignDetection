@@ -9,6 +9,7 @@ import mediapipe as mp
 import cv2
 import numpy as np
 import random
+from PIL import ImageFont, ImageDraw, Image
 
 
 def generate_distinct_colors(num_colors):
@@ -77,8 +78,40 @@ def contains_hands(keypoints):
     return contains_non_zero
 
 
+def apply_replacements(input_array):
+    replacements = {
+        "Toi Ten": "Toi ten la",
+        # Thêm các cụm từ và cụm từ thay thế khác vào đây
+    }
+
+    output_array = []
+    i = 0
+
+    while i < len(input_array):
+        combined_word = input_array[i]
+        found_match = False
+
+        for j in range(i + 1, len(input_array)):
+            combined_word += " " + input_array[j]
+
+            if combined_word in replacements:
+                output_array.append(replacements[combined_word])
+                i = j + 1
+                found_match = True
+                break
+
+        if not found_match:
+            output_array.append(input_array[i])
+            i += 1
+
+    return output_array
+
+
 # Path for exported data, numpy arrays
-DATA_PATH = os.path.join('AcData')
+# DATA_PATH = os.path.join('AcData')
+DATA_PATH = os.path.join('Frames/Processed')
+fontpath = "./FiraSans-Regular.ttf"
+font = ImageFont.truetype(fontpath, 32)
 
 # Danh sách các action đã tạo
 folder_names = [name for name in os.listdir(DATA_PATH) if os.path.isdir(os.path.join(DATA_PATH, name))]
@@ -105,7 +138,7 @@ model.add(Dense(32, activation='relu')) # , kernel_regularizer=l2(0.01)  # Add L
 model.add(Dense(actions.shape[0], activation='softmax'))
 model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
-model.load_weights('action_7.h5')
+model.load_weights('action_new.h5')
 
 # 1. New detection variables
 sequences = []
@@ -169,6 +202,7 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
 
         # Loại bỏ hành động 'Break' ra khỏi phần hiển thị
         filtered_sentences = [s for s in sentences if s != 'None']
+        filtered_sentences = apply_replacements(filtered_sentences)
         sum_lengths = sum(len(s) for s in filtered_sentences)
         print(sum_lengths)
         if sum_lengths > 25:
@@ -176,8 +210,13 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
         # if len(filtered_sentences) > 4:
         #     filtered_sentences = filtered_sentences[-4:]
         cv2.rectangle(image, (0, 0), (640, 40), (245, 117, 16), -1)
-        cv2.putText(image, ' '.join(filtered_sentences), (3, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        # cv2.putText(image, ' '.join(filtered_sentences), (3, 30),
+        #             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
+        img_pil = Image.fromarray(image)
+        draw = ImageDraw.Draw(img_pil)
+        draw.text((10, 5), ' '.join(filtered_sentences), font=font, fill=(0,255,0,0))
+        image = np.array(img_pil)
 
         # Show to screen
         cv2.imshow('OpenCV Feed', image)

@@ -4,6 +4,7 @@ import os
 from matplotlib import pyplot as plt
 import time
 import mediapipe as mp
+from PIL import ImageFont, ImageDraw, Image
 
 mp_holistic = mp.solutions.holistic # Holistic model
 mp_drawing = mp.solutions.drawing_utils # Drawing utilities
@@ -61,6 +62,8 @@ def check_subfolder_file_count(folder_path):
 
 # Path for exported data, numpy arrays
 DATA_PATH = os.path.join('AcData')
+fontpath = "./FiraSans-Regular.ttf"
+font = ImageFont.truetype(fontpath, 32)
 
 # Actions that we try to detect
 actions = np.array(['None', 'Xin chao', 'Cam on', 'Hen', 'Gap', 'Lai', 'Toi', 'Ten',
@@ -70,6 +73,7 @@ actions = np.array(['None', 'Xin chao', 'Cam on', 'Hen', 'Gap', 'Lai', 'Toi', 'T
 sequence_length = 10
 video_index = -1
 action_index = 11
+current_action = 'H'
 
 # Tạo folder Data nếu chưa có
 for action in actions:
@@ -101,6 +105,10 @@ if __name__ == '__main__':
             if not collecting:
                 cv2.putText(image, 'Prepare action: {}, video num: {}'.format(actions[action_index], str(video_index + 1)),
                     (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+                img_pil = Image.fromarray(image)
+                draw = ImageDraw.Draw(img_pil)
+                draw.text((10, 0), "Xin chào!", font=font, fill=(0, 255, 0, 0))
+                image = np.array(img_pil)
 
             # Lưu ảnh khi nhấn 's'
             key = cv2.waitKey(1)
