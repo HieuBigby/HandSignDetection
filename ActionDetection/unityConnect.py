@@ -7,7 +7,7 @@ cap = cv2.VideoCapture(0)
 # cap.set(4, 720)
 width, height = 640, 480
 
-detector = HandDetector(maxHands=1, detectionCon=0.8)
+detector = HandDetector(maxHands=2, detectionCon=0.8)
 
 # Communication
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -20,12 +20,14 @@ while True:
     data = []
 
     if hands:
-        hand = hands[0]
-        lmList = hand['lmList']
-        # print(lmList)
-        for lm in lmList:
-            data.extend([lm[0], height - lm[1], lm[2]])
-        print(data)
+        for hand in hands:
+            lmList = hand['lmList']
+            data.append(hand['type'])
+            # print(lmList)
+            for lm in lmList:
+                data.extend([lm[0], height - lm[1], lm[2]])
+            data.append('|')
+            print(data)
         sock.sendto(str.encode(str(data)), serverAddressPort)
 
     img = cv2.resize(img, (0, 0), None, 0.5, 0.5)
