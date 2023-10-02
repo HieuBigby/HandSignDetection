@@ -1,3 +1,5 @@
+import math
+
 import cv2
 import numpy as np
 import os
@@ -48,6 +50,61 @@ def extract_keypoints(results):
     rh = np.array([[res.x, res.y, res.z] for res in results.right_hand_landmarks.landmark]).flatten() if results.right_hand_landmarks else np.zeros(21*3)
     return np.concatenate([pose, lh, rh]) # [pose, face, lh, rh]
 
+def extract_keypoints_2(results):
+    lh_list = []
+    if results.left_hand_landmarks:
+        lh_pos = results.left_hand_landmarks.landmark[0]
+        lh_pos = [round(lh_pos.x, 2), round(lh_pos.y, 2), round(lh_pos.z, 2)]
+        lh_list.append(lh_pos)
+        lh_vectors = normalized_vectors(results.left_hand_landmarks)
+        lh_list.extend(lh_vectors)
+
+    rh_list = []
+    if results.right_hand_landmarks:
+        rh_pos = results.right_hand_landmarks.landmark[0]
+        rh_pos = [round(rh_pos.x, 2), round(rh_pos.y, 2), round(rh_pos.z, 2)]
+        rh_list.append(rh_pos)
+        rh_vectors = normalized_vectors(results.right_hand_landmarks)
+        rh_list.extend(rh_vectors)
+
+    lh_array = np.array(lh_list).flatten() if lh_list else np.zeros(20 * 3 + 3)
+    rh_array = np.array(rh_list).flatten() if rh_list else np.zeros(20 * 3 + 3)
+
+    return np.concatenate([lh_array, rh_array])
+
+def normalized_vectors(hand_landmarks):
+    vectors = []
+    # Define the order of points for calculations
+    point_order = [
+        (0, 1), (1, 2), (2, 3), (3, 4),
+        (0, 5), (5, 6), (6, 7), (7, 8),
+        (0, 9), (9, 10), (10, 11), (11, 12),
+        (0, 13), (13, 14), (14, 15), (15, 16),
+        (0, 17), (17, 18), (18, 19), (19, 20)
+    ]
+
+    for start_idx, end_idx in point_order:
+        start_point = hand_landmarks.landmark[start_idx]
+        end_point = hand_landmarks.landmark[end_idx]
+
+        normalized_vector = normalize_vector(end_point, start_point)
+        vectors.append(normalized_vector)
+
+    return vectors
+
+def normalize_vector(point1, point2):
+    # Calculate the vector between the two NormalizedLandmark points
+    vector = (point2.x - point1.x, point2.y - point1.y, point2.z - point1.z)
+
+    # Calculate the length of the vector
+    length = math.sqrt(vector[0] ** 2 + vector[1] ** 2 + vector[2] ** 2)
+
+    # Normalize the vector and return it
+    normalized_vector = (round(vector[0] / length, 2), round(vector[1] / length, 2), round(vector[2] / length, 2))
+
+    return normalized_vector
+
+
 def check_subfolder_file_count(folder_path):
     for video in os.listdir(folder_path):
         print('video ' + video + ' ' + str(len(os.listdir(os.path.join(folder_path, video)))))
@@ -72,8 +129,8 @@ actions = np.array(['None', 'Xin chao', 'Cam on', 'Hen', 'Gap', 'Lai', 'Toi', 'T
 # Videos are going to be 30 frames in length
 sequence_length = 10
 video_index = -1
-action_index = 11
-current_action = 'H'
+action_index = 11 # (có khi viết thêm hàm để tìm index của current_action)
+current_action = 'Test'
 
 # Tạo folder Data nếu chưa có
 for action in actions:
@@ -98,6 +155,12 @@ if __name__ == '__main__':
 
             # Make detections
             image, results = mediapipe_detection(image, holistic)
+            if results:
+                if results.right_hand_landmarks:
+                    print(normalize_vector(results.right_hand_landmarks.landmark[6], results.right_hand_landmarks.landmark[5]))
+                # print(results.right_hand_landmarks.landmark[0])
+                # print(normalized_vectors(results.right_hand_landmarks)[4])
+                # print(extract_keypoints(results))
 
             # Draw landmarks
             draw_styled_landmarks(image, results)
@@ -105,10 +168,10 @@ if __name__ == '__main__':
             if not collecting:
                 cv2.putText(image, 'Prepare action: {}, video num: {}'.format(actions[action_index], str(video_index + 1)),
                     (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
-                img_pil = Image.fromarray(image)
-                draw = ImageDraw.Draw(img_pil)
-                draw.text((10, 0), "Xin chào!", font=font, fill=(0, 255, 0, 0))
-                image = np.array(img_pil)
+                # img_pil = Image.fromarray(image)
+                # draw = ImageDraw.Draw(img_pil)
+                # draw.text((10, 0), "Xin chào!", font=font, fill=(0, 255, 0, 0))
+                # image = np.array(img_pil)
 
             # Lưu ảnh khi nhấn 's'
             key = cv2.waitKey(1)

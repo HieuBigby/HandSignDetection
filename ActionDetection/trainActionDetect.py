@@ -14,15 +14,19 @@ import numpy as np
 
 # Path for exported data, numpy arrays
 # DATA_PATH = os.path.join('AcData')
-DATA_PATH = os.path.join('Frames/Processed')
+# DATA_PATH = os.path.join('Frames/Processed')
+DATA_PATH = os.path.join('Frames/AnotherProcessed')
+
+actions = np.array(['A', 'B', 'C', 'D', 'E'])
 
 # Danh sách các action đã tạo
-folder_names = [name for name in os.listdir(DATA_PATH) if os.path.isdir(os.path.join(DATA_PATH, name))]
+# folder_names = [name for name in os.listdir(DATA_PATH) if os.path.isdir(os.path.join(DATA_PATH, name))]
+folder_names = [name for name in actions if os.path.isdir(os.path.join(DATA_PATH, name))]
 
 # Convert the list of folder names to a NumPy array
 actions = np.array(folder_names)
 
-# Videos are going to be 30 frames in length
+# Videos are going to be 10 frames in length
 sequence_length = 10
 
 # Categorize data
@@ -55,7 +59,7 @@ log_dir = os.path.join('Logs')
 tb_callback = TensorBoard(log_dir=log_dir)
 
 model = Sequential()
-model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(sequence_length, 258))) # input_shape=(sequence_length, 1662)
+model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(sequence_length, 126))) # input_shape=(sequence_length, 258)
 model.add(Dropout(0.2))
 model.add(LSTM(128, return_sequences=True, activation='relu'))
 model.add(Dropout(0.2))
@@ -65,7 +69,7 @@ model.add(Dense(32, activation='relu')) # , kernel_regularizer=l2(0.01)  # Add L
 model.add(Dense(actions.shape[0], activation='softmax'))
 model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 model.fit(X_train, y_train, epochs=200, callbacks=[tb_callback], validation_data=(X_test, y_test))
-model.save('action_new.h5')
+model.save('action_test_2.h5')
 
 # model_path = 'action_1.h5'
 

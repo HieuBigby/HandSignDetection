@@ -2,8 +2,8 @@ import cv2
 import os
 import mediapipe as mp
 
-video_path = ''
-output_folder = 'Frames/Raw/H/Batch 1'
+video_path = 'Videos/alphabet.mp4'
+output_folder = 'Frames/Raw/Alphabet'
 
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)

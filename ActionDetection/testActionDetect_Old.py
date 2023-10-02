@@ -14,7 +14,7 @@ from PIL import ImageFont, ImageDraw, Image
 
 def generate_distinct_colors(num_colors):
     distinct_colors = []
-    for _ in range(num_colors): 
+    for _ in range(num_colors):
         color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
         distinct_colors.append(color)
     return distinct_colors
@@ -184,7 +184,7 @@ mp_drawing = mp.solutions.drawing_utils # Drawing utilities
 model = Sequential()
 
 model = Sequential()
-model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(sequence_length, 126))) # input_shape=(sequence_length, 258)
+model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(sequence_length, 258))) # input_shape=(sequence_length, 258)
 model.add(Dropout(0.2))
 model.add(LSTM(128, return_sequences=True, activation='relu'))
 model.add(Dropout(0.2))
@@ -194,7 +194,7 @@ model.add(Dense(32, activation='relu')) # , kernel_regularizer=l2(0.01)  # Add L
 model.add(Dense(actions.shape[0], activation='softmax'))
 model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
-model.load_weights('action_test_2.h5')
+model.load_weights('action_test_1.h5')
 
 # 1. New detection variables
 sequences = []
@@ -217,7 +217,7 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
         draw_styled_landmarks(image, results)
 
         # 2. Prediction logic
-        keypoints = extract_keypoints_2(results)
+        keypoints = extract_keypoints(results)
 
         # if results.left_hand_landmarks or results.right_hand_landmarks:
         #     sequences.append(keypoints)
