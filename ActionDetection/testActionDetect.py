@@ -12,25 +12,6 @@ import random
 from PIL import ImageFont, ImageDraw, Image
 
 
-def generate_distinct_colors(num_colors):
-    distinct_colors = []
-    for _ in range(num_colors): 
-        color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
-        distinct_colors.append(color)
-    return distinct_colors
-
-
-# colors = [(245, 117, 16), (117, 245, 16), (16, 117, 245)]
-
-def prob_viz(res, actions, input_frame, colors):
-    output_frame = input_frame.copy()
-    for num, prob in enumerate(res):
-        cv2.rectangle(output_frame, (0, 60 + num * 40), (int(prob * 100), 90 + num * 40), colors[num], -1)
-        cv2.putText(output_frame, actions[num], (0, 85 + num * 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2,
-                    cv2.LINE_AA)
-
-    return output_frame
-
 def mediapipe_detection(image, model):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) # COLOR CONVERSION BGR 2 RGB
     image.flags.writeable = False                  # Image is no longer writeable
@@ -62,13 +43,6 @@ def draw_styled_landmarks(image, results):
                              )
 
 def extract_keypoints(results):
-    pose = np.array([[res.x, res.y, res.z, res.visibility] for res in results.pose_landmarks.landmark]).flatten() if results.pose_landmarks else np.zeros(33*4)
-    # face = np.array([[res.x, res.y, res.z] for res in results.face_landmarks.landmark]).flatten() if results.face_landmarks else np.zeros(468*3)
-    lh = np.array([[res.x, res.y, res.z] for res in results.left_hand_landmarks.landmark]).flatten() if results.left_hand_landmarks else np.zeros(21*3)
-    rh = np.array([[res.x, res.y, res.z] for res in results.right_hand_landmarks.landmark]).flatten() if results.right_hand_landmarks else np.zeros(21*3)
-    return np.concatenate([pose, lh, rh]) # [pose, face, lh, rh]
-
-def extract_keypoints_2(results):
     lh_list = []
     if results.left_hand_landmarks:
         lh_pos = results.left_hand_landmarks.landmark[0]
@@ -122,15 +96,6 @@ def normalize_vector(point1, point2):
 
     return normalized_vector
 
-def contains_hands(keypoints):
-    # kiểm tra xem từ 132 đến 258 có thằng nào bằng 0 không (để biết là lúc nào có tay mới thêm vào sequence)
-    array_subset = keypoints[132:259]  # Extract elements from index 132 to 258
-
-    # Check if any element in the subset is different from 0
-    contains_non_zero = np.any(array_subset != 0)
-
-    return contains_non_zero
-
 
 def apply_replacements(input_array):
     replacements = {
@@ -172,11 +137,10 @@ folder_names = [name for name in os.listdir(DATA_PATH) if os.path.isdir(os.path.
 # Convert the list of folder names to a NumPy array
 # actions = np.array(folder_names)
 # actions = np.array(['G', 'Cảm ơn', 'A', 'B', 'Đ', 'C', 'None', 'Xin chào', 'D', 'E', 'Hẹn', 'Lại', 'Gặp'])
-actions = np.array(['A', 'B', 'C', 'D', 'E'])
+actions = np.array(['None', 'A', 'B', 'C', 'D', 'E', 'I', 'H', 'U', 'Xin chao', 'Toi', 'Ten'])
 
 # Videos are going to be 30 frames in length
 sequence_length = 10
-colors = generate_distinct_colors(actions.shape[0])
 
 # Load Model
 mp_holistic = mp.solutions.holistic # Holistic model
@@ -194,7 +158,7 @@ model.add(Dense(32, activation='relu')) # , kernel_regularizer=l2(0.01)  # Add L
 model.add(Dense(actions.shape[0], activation='softmax'))
 model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
-model.load_weights('action_test_2.h5')
+model.load_weights('Models/action_test_3.h5')
 
 # 1. New detection variables
 sequences = []
@@ -217,16 +181,7 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
         draw_styled_landmarks(image, results)
 
         # 2. Prediction logic
-        keypoints = extract_keypoints_2(results)
-
-        # if results.left_hand_landmarks or results.right_hand_landmarks:
-        #     sequences.append(keypoints)
-        # else:
-        #     sequences.append(np.zeros(258))
-
-        # if contains_hands(keypoints):
-        #     # print('Have hands')
-        #     sequences.append(keypoints)
+        keypoints = extract_keypoints(results)
         sequences.append(keypoints)
         sequences = sequences[-10:]
 
@@ -252,9 +207,6 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
 
             # Reset lại sentences
             sentences = sentences[-10:]
-
-            # # Viz probabilities
-            # image = prob_viz(res, actions, image, colors)
 
         # Loại bỏ hành động 'Break' ra khỏi phần hiển thị
         filtered_sentences = [s for s in sentences if s != 'None']

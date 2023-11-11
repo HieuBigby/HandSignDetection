@@ -2,19 +2,14 @@ import cv2
 import os
 import mediapipe as mp
 
-video_path = 'Videos/alphabet.mp4'
-output_folder = 'Frames/Raw/Alphabet'
+video_path = ''
+output_folder = 'Frames/Raw/Ten/Batch 0'
 
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 
 video_capture = cv2.VideoCapture(video_path)
 frame_count = 0
-mp_holistic = mp.solutions.holistic # Holistic model
-mp_drawing = mp.solutions.drawing_utils # Drawing utilities
-
-# Create a VideoCapture object and read from input file
-# If the input is the camera, pass 0 instead of the video file name
 
 if not os.path.exists(video_path):
     print('Không tồn tại link đến video, bật camera ngoài...')

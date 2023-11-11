@@ -12,16 +12,16 @@ import numpy as np
 # Path for exported data, numpy arrays
 # DATA_PATH = os.path.join('AcData')
 # DATA_PATH = os.path.join('Frames/Processed')
-DATA_PATH = os.path.join('Frames/AnotherProcessed')
+DATA_PATH = os.path.join('Frames/Processed')
 
-actions = np.array(['A', 'B', 'C', 'D', 'E'])
+actions = np.array(['None', 'A', 'B', 'C', 'D', 'E', 'I', 'H', 'U', 'Xin chao', 'Toi', 'Ten'])
 
-# Danh sách các action đã tạo
-# folder_names = [name for name in os.listdir(DATA_PATH) if os.path.isdir(os.path.join(DATA_PATH, name))]
-folder_names = [name for name in actions if os.path.isdir(os.path.join(DATA_PATH, name))]
-
-# Convert the list of folder names to a NumPy array
-actions = np.array(folder_names)
+# # Danh sách các action đã tạo
+# # folder_names = [name for name in os.listdir(DATA_PATH) if os.path.isdir(os.path.join(DATA_PATH, name))]
+# folder_names = [name for name in actions if os.path.isdir(os.path.join(DATA_PATH, name))]
+#
+# # Convert the list of folder names to a NumPy array
+# actions = np.array(folder_names)
 
 # Videos are going to be 10 frames in length
 sequence_length = 10
@@ -36,6 +36,7 @@ for action in actions:
             res = np.load(os.path.join(DATA_PATH, action, str(video), "{}.npy".format(frame_num)))
             # print(str(frame_num) + ' of ' + str(video))
             # print(str(len(res)) + ' of ' + str(video) + ' ac ' + str(action))
+            if len(res) != 126: print(action + "-" + str(video))
             frames.append(res)
         sequences.append(frames)
         labels.append(label_map[action])
@@ -64,4 +65,4 @@ model.add(Dense(32, activation='relu')) # , kernel_regularizer=l2(0.01)  # Add L
 model.add(Dense(actions.shape[0], activation='softmax'))
 model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 model.fit(X_train, y_train, epochs=200, callbacks=[tb_callback], validation_data=(X_test, y_test))
-model.save('action_test_2.h5')
+model.save('Models/action_test_3.h5')

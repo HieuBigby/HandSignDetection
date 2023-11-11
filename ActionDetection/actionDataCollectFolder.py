@@ -3,8 +3,8 @@ import math
 import cv2
 import numpy as np
 import os
-from dataAugmentation import get_image_files
-from dataAugmentation import clear_folder
+from Legacy.dataAugmentation import get_image_files
+from Legacy.dataAugmentation import clear_folder
 from imgaug import augmenters as iaa
 import mediapipe as mp
 
@@ -151,7 +151,7 @@ mp_holistic = mp.solutions.holistic # Holistic model
 mp_drawing = mp.solutions.drawing_utils # Drawing utilities
 
 # Actions that we try to detect
-actions = np.array(['A', 'B', 'C', 'D', 'E'])
+actions = np.array(['None', 'A', 'B', 'C', 'D', 'E', 'I', 'H', 'U', 'Xin chao', 'Toi', 'Ten'])
 
 processed_path = 'Frames/Processed'
 raw_path = 'Frames/Raw'

@@ -117,7 +117,7 @@ def check_subfolder_file_count(folder_path):
         #     print(f"Folder '{root}' does not have {target_file_count} files.")
 
 # Path for exported data, numpy arrays
-DATA_PATH = os.path.join('AcData')
+DATA_PATH = os.path.join('Frames/Raw')
 fontpath = "./FiraSans-Regular.ttf"
 font = ImageFont.truetype(fontpath, 32)
 
@@ -129,13 +129,18 @@ actions = np.array(['None', 'Xin chao', 'Cam on', 'Hen', 'Gap', 'Lai', 'Toi', 'T
 sequence_length = 10
 video_index = -1
 action_index = 11 # (có khi viết thêm hàm để tìm index của current_action)
-current_action = 'Test'
+current_action = 'None'
+is_process = False
 
 # Tạo folder Data nếu chưa có
-for action in actions:
-    action_path = os.path.join(DATA_PATH, action)
-    if not os.path.exists(action_path):
-        os.makedirs(action_path)
+# for action in actions:
+#     action_path = os.path.join(DATA_PATH, action)
+#     if not os.path.exists(action_path):
+#         os.makedirs(action_path)
+
+action_path = os.path.join(DATA_PATH, current_action)
+if not os.path.exists(action_path):
+     os.makedirs(action_path)
 
 # check_subfolder_file_count('AcData/Xin chao')
 
@@ -154,23 +159,14 @@ if __name__ == '__main__':
 
             # Make detections
             image, results = mediapipe_detection(image, holistic)
-            if results:
-                if results.right_hand_landmarks:
-                    print(normalize_vector(results.right_hand_landmarks.landmark[6], results.right_hand_landmarks.landmark[5]))
-                # print(results.right_hand_landmarks.landmark[0])
-                # print(normalized_vectors(results.right_hand_landmarks)[4])
-                # print(extract_keypoints(results))
 
-            # Draw landmarks
-            draw_styled_landmarks(image, results)
+            if is_process:
+                # Draw landmarks
+                draw_styled_landmarks(image, results)
 
             if not collecting:
-                cv2.putText(image, 'Prepare action: {}, video num: {}'.format(actions[action_index], str(video_index + 1)),
+                cv2.putText(image, 'Prepare action: {}, video num: {}'.format(current_action, str(video_index + 1)),
                     (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
-                # img_pil = Image.fromarray(image)
-                # draw = ImageDraw.Draw(img_pil)
-                # draw.text((10, 0), "Xin chào!", font=font, fill=(0, 255, 0, 0))
-                # image = np.array(img_pil)
 
             # Lưu ảnh khi nhấn 's'
             key = cv2.waitKey(1)
@@ -193,12 +189,15 @@ if __name__ == '__main__':
                         .format(frame_counter, video_index, actions[action_index]), (15, 15),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
 
-                    folder_path = os.path.join(DATA_PATH, actions[action_index], str(video_index))
+                    folder_path = os.path.join(DATA_PATH, current_action, str(video_index))
                     if not os.path.exists(folder_path):
                         os.makedirs(folder_path)
+
+                    if is_process:
+                        keypoints = extract_keypoints(results)
+                        np.save(folder_path + f'/{frame_counter}', keypoints)
+
                     file_path = folder_path + f'/Image_{frame_counter}.jpg'
-                    keypoints = extract_keypoints(results)
-                    np.save(folder_path + f'/{frame_counter}', keypoints)
                     print("Saving image:", file_path)
                     success = cv2.imwrite(file_path, image)
                     frame_counter += 1
