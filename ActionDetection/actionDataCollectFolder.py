@@ -151,12 +151,17 @@ mp_holistic = mp.solutions.holistic # Holistic model
 mp_drawing = mp.solutions.drawing_utils # Drawing utilities
 
 # Actions that we try to detect
-actions = np.array(['None', 'A', 'B', 'C', 'D', 'E', 'I', 'H', 'U', 'Xin chao', 'Toi', 'Ten'])
+actions = np.array(['None', 'A', 'B', 'C', 'D', 'E', 'I', 'H', 'U', 'Xin chao', 'Toi', 'Ten',
+                    'Cam on', 'Hen', 'Gap', 'Lai', 'Vui', 'Khoe', 'Xin loi', 'Tam biet', 'Ban'])
+with open("dictionary.txt", 'w') as f:
+    for index, action in enumerate(actions):
+        f.write('%s: %s\n' % (action, index))
 
 processed_path = 'Frames/Processed'
 raw_path = 'Frames/Raw'
 segment_size = 10
 num_repeats = 100
+override_exist = False
 
 if __name__ == '__main__':
     with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
@@ -169,6 +174,10 @@ if __name__ == '__main__':
             action_path = f'{processed_path}/{action}'
             if not os.path.exists(action_path):
                 os.makedirs(action_path)
+            else:
+                if not override_exist:
+                    print("Không override: " + action)
+                    continue
 
             action_dirs = list_directory(frame_path)
             for num in range(num_repeats):

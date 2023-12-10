@@ -1,0 +1,21 @@
+None: 0
+A: 1
+B: 2
+C: 3
+D: 4
+E: 5
+I: 6
+H: 7
+U: 8
+Xin chao: 9
+Toi: 10
+Ten: 11
+Cam on: 12
+Hen: 13
+Gap: 14
+Lai: 15
+Vui: 16
+Khoe: 17
+Xin loi: 18
+Tam biet: 19
+Ban: 20

@@ -1,6 +1,7 @@
 import math
 import os
 
+import keras.utils
 from keras.models import Sequential
 from keras.layers import LSTM, Dense, Dropout
 from keras.callbacks import TensorBoard
@@ -97,12 +98,7 @@ def normalize_vector(point1, point2):
     return normalized_vector
 
 
-def apply_replacements(input_array):
-    replacements = {
-        "Toi Ten": "Toi ten la",
-        # Thêm các cụm từ và cụm từ thay thế khác vào đây
-    }
-
+def apply_replacements(input_array, replacements):
     output_array = []
     i = 0
 
@@ -125,6 +121,26 @@ def apply_replacements(input_array):
 
     return output_array
 
+def read_dictionary():
+    action_list = []
+    with open('dictionary.txt', 'r', encoding='utf-8') as file:
+        # Read each line in the file
+        for line in file:
+            key, value = map(str.strip, line.split(':', 1))
+            action_list.append(key)
+    return action_list
+
+def read_structure():
+    structure_dict = {}
+    with open('structure.txt', 'r', encoding='utf-8') as file:
+        # Read each line in the file
+        for line in file:
+            # Split each line into key and value based on the colon (':') character
+            key, value = map(str.strip, line.split(':', 1))
+
+            # Add the key-value pair to the dictionary
+            structure_dict[key] = value
+    return structure_dict
 
 # Path for exported data, numpy arrays
 DATA_PATH = os.path.join('AcData')
@@ -135,9 +151,8 @@ font = ImageFont.truetype(fontpath, 32)
 # Danh sách các action đã tạo
 folder_names = [name for name in os.listdir(DATA_PATH) if os.path.isdir(os.path.join(DATA_PATH, name))]
 # Convert the list of folder names to a NumPy array
-# actions = np.array(folder_names)
-# actions = np.array(['G', 'Cảm ơn', 'A', 'B', 'Đ', 'C', 'None', 'Xin chào', 'D', 'E', 'Hẹn', 'Lại', 'Gặp'])
-actions = np.array(['None', 'A', 'B', 'C', 'D', 'E', 'I', 'H', 'U', 'Xin chao', 'Toi', 'Ten'])
+actions = np.array(read_dictionary())
+replacements = read_structure()
 
 # Videos are going to be 30 frames in length
 sequence_length = 10
@@ -145,7 +160,6 @@ sequence_length = 10
 # Load Model
 mp_holistic = mp.solutions.holistic # Holistic model
 mp_drawing = mp.solutions.drawing_utils # Drawing utilities
-model = Sequential()
 
 model = Sequential()
 model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(sequence_length, 126))) # input_shape=(sequence_length, 258)
@@ -158,7 +172,10 @@ model.add(Dense(32, activation='relu')) # , kernel_regularizer=l2(0.01)  # Add L
 model.add(Dense(actions.shape[0], activation='softmax'))
 model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
-model.load_weights('Models/action_test_3.h5')
+model.load_weights('Models/action_final_noothers.h5')
+# img_file = './model_arch_2.png'
+# keras.utils.plot_model(model, to_file=img_file, show_shapes=True, show_layer_names=True)
+
 
 # 1. New detection variables
 sequences = []
@@ -210,7 +227,7 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
 
         # Loại bỏ hành động 'Break' ra khỏi phần hiển thị
         filtered_sentences = [s for s in sentences if s != 'None']
-        filtered_sentences = apply_replacements(filtered_sentences)
+        filtered_sentences = apply_replacements(filtered_sentences, replacements)
         sum_lengths = sum(len(s) for s in filtered_sentences)
         # print(sum_lengths)
         if sum_lengths > 25:
