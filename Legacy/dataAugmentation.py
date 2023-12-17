@@ -1,14 +1,10 @@
 import math
 import os
-import time
 import cv2
 import numpy as np
 import imgaug as ia
 from imgaug import augmenters as iaa
 from cvzone.HandTrackingModule import HandDetector
-from cvzone.ClassificationModule import Classifier
-
-import dataCollection
 
 
 def get_image_files(folder_path):
